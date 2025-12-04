@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>测测你是不是猪</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+    background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+    transition: all 0.5s;
+    overflow: hidden;
+  }
+  body.dark {
+    background: linear-gradient(135deg, #2d3436, #636e72);
+    color: #fff;
+  }
+  .container {
+    text-align: center;
+    max-width: 90%;
+  }
+  h1 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+  }
+  .pig {
+    font-size: 6em;
+    margin: 20px 0;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  .press-area {
+    width: 260px;
+    height: 260px;
+    margin: 40px auto;
+    background: rgba(255,255,255,0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5em;
+    user-select: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+  }
+  .press-area:active {
+    transform: scale(0.95);
+  }
+  .progress-container {
+    width: 280px;
+    height: 20px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px auto;
+  }
+  .progress {
+    width: 0%;
+    height: 100%;
+    background: #ff7675;
+    transition: width 0.1s linear;
+  }
+  #result {
+    font-size: 1.8em;
+    margin: 30px 0;
+    min-height: 60px;
+  }
+  button {
+    padding: 12px 30px;
+    font-size: 1.1em;
+    background: #fd79a8;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  button:hover { background: #e84393; }
+  .mode-switch {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 1.5em;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="mode-switch" onclick="toggleDark()">Dark Mode</div>
+
+<div class="container">
+  <h1>测测你是不是猪</h1>
+  <div class="pig">Pig Emoji</div>
+  
+  <div class="press-area" id="pressArea">
+    按住我
+  </div>
+  
+  <div class="progress-container">
+    <div class="progress" id="progress"></div>
+  </div>
+  
+  <div id="result"></div>
+  
+  <button id="retest" style="display:none;">重新测试</button>
+</div>
+
+<script>
+// 所有可能的猪类型（可以随便加）
+const pigTypes = [
+  "超级可爱的小猪猪",
+  "贪吃到爆的肥猪",
+  "懒到化石的睡猪",
+  "聪明得像人的天才猪",
+  "天天哼歌的快乐猪",
+  "社恐到家的躲猪",
+  "恋爱脑满分的情猪",
+  "健身狂魔的肌肉猪",
+  "富得流油的贵族猪",
+  "其实是头狼的卧底猪",
+  "宇宙最可爱的猪中之王"
+];
+
+const pressArea = document.getElementById('pressArea');
+const progress = document.getElementById('progress');
+const resultEl = document.getElementById('result');
+const retestBtn = document.getElementById('retest');
+
+let pressTimer;
+let isLongPress = false;
+
+// 读取保存的结果
+window.onload = () => {
+  const saved = localStorage.getItem('myPigType');
+  if (saved) showResult(saved);
+  
+  // 暗黑模式参数支持 ?darkmode=1
+  const urlParams = new URLSearchParams(location.search);
+  if (urlParams.get('darkmode') === '1') document.body.classList.add('dark');
+};
+
+function startPress() {
+  if (resultEl.textContent) return; // 已经测过了就不重复
+  isLongPress = false;
+  progress.style.width = '0%';
+  
+  pressTimer = setTimeout(() => {
+    isLongPress = true;
+    runPigTest();
+  }, 1200); // 长按 1.2 秒触发
+}
+
+function endPress() {
+  if (!isLongPress) {
+    clearTimeout(pressTimer);
+  }
+}
+
+// 电脑 + 手机双兼容
+pressArea.addEventListener('mousedown', startPress);
+pressArea.addEventListener('mouseup', endPress);
+pressArea.addEventListener('mouseleave', endPress);
+pressArea.addEventListener('touchstart', e => { e.preventDefault(); startPress(); });
+pressArea.addEventListener('touchend', e => { e.preventDefault(); endPress(); });
+
+function runPigTest() {
+  let percent = 0;
+  const interval = setInterval(() => {
+    percent += 3;
+    progress.style.width = percent + '%';
+    if (percent >= 100) {
+      clearInterval(interval);
+      const randomPig = pigTypes[Math.floor(Math.random() * pigTypes.length)];
+      showResult(randomPig);
+      localStorage.setItem('myPigType', randomPig);
+      if ('vibrate' in navigator) navigator.vibrate(200); // 手机震动一下
+    }
+  }, 50);
+}
+
+function showResult(text) {
+  resultEl.innerHTML = `检测结果：<br><strong>你是一只${text}！</strong>`;
+  pressArea.style.display = 'none';
+  retestBtn.style.display = 'block';
+}
+
+retestBtn.onclick = () => {
+  localStorage.removeItem('myPigType');
+  resultEl.textContent = '';
+  progress.style.width = '0%';
+  pressArea.style.display = 'flex';
+  pressArea.textContent = '按住我';
+  retestBtn.style.display = 'none';
+};
+
+// 暗黑模式切换
+function toggleDark() {
+  document.body.classList.toggle('dark');
+}
+</script>
+</body>
+</html>
